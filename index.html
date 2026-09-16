@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сколько альтов держать</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eceff3;
+    --panel:#ffffff;
+    --panel-2:#f5f7fa;
+    --line:#d3dae3;
+    --ink:#16202c;
+    --muted:#5d6e82;
+    --accent:#0d7c72;
+    --accent-soft:#d4ece8;
+    --r100:#2f9e8f;
+    --r80:#78a55f;
+    --r60:#bd9a33;
+    --r40:#cd7833;
+    --r20:#bb5346;
+    --shadow:0 1px 2px rgba(20,32,45,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e141d; --panel:#151d28; --panel-2:#1a2431; --line:#2a3644;
+      --ink:#e6edf5; --muted:#8ea0b6; --accent:#54d3c2; --accent-soft:#183a3a;
+      --r100:#45c2b0; --r80:#8fc06e; --r60:#d4b44c; --r40:#dd8c46; --r20:#cf6455;
+      --shadow:none;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e141d; --panel:#151d28; --panel-2:#1a2431; --line:#2a3644;
+    --ink:#e6edf5; --muted:#8ea0b6; --accent:#54d3c2; --accent-soft:#183a3a;
+    --r100:#45c2b0; --r80:#8fc06e; --r60:#d4b44c; --r40:#dd8c46; --r20:#cf6455;
+    --shadow:none;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:16px; line-height:1.5;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:28px 18px 64px}
+
+  h1{
+    font-family:"Fraunces", Georgia, serif;
+    font-weight:700; font-size:clamp(28px,5vw,44px); line-height:1.05;
+    margin:0 0 6px; letter-spacing:-.01em;
+  }
+  .lede{color:var(--muted); margin:0 0 26px; max-width:62ch}
+
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    box-shadow:var(--shadow); padding:20px; margin-bottom:18px;
+  }
+
+  /* ---- премиум ---- */
+  .toggle{display:flex; align-items:center; gap:10px; font-weight:500; cursor:pointer; white-space:nowrap}
+  .toggle input{width:22px; height:22px; accent-color:var(--accent); cursor:pointer}
+  .premrow{display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+           padding-bottom:16px; margin-bottom:18px; border-bottom:1px solid var(--line)}
+  .pill{font-size:13px; color:var(--accent); background:var(--accent-soft);
+        border:1px solid var(--accent); border-radius:999px; padding:4px 13px}
+  .pill.off{color:var(--r20); border-color:var(--r20); background:transparent}
+
+  /* ---- альты ---- */
+  .dial{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .dial label{font-weight:500}
+  .stepper{display:flex; align-items:center; gap:10px}
+  button.step{
+    width:40px; height:40px; border-radius:8px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--ink); font-size:22px; line-height:1;
+    cursor:pointer; font-family:inherit;
+  }
+  button.step:hover{border-color:var(--accent)}
+  button.step:disabled{opacity:.35; cursor:default}
+  .altnum{
+    font-family:"Fraunces", Georgia, serif; font-weight:700;
+    font-size:34px; min-width:2ch; text-align:center; font-variant-numeric:tabular-nums;
+  }
+  input[type=range]{flex:1; min-width:180px; accent-color:var(--accent)}
+
+  /* ---- итоги ---- */
+  .hero{display:flex; flex-wrap:wrap; gap:28px 40px; align-items:flex-end; margin-top:22px}
+  .big{font-family:"Fraunces",Georgia,serif; font-weight:700; font-size:clamp(34px,7vw,56px); line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+  .cap{color:var(--muted); font-size:14px; margin-bottom:6px}
+  .sub{color:var(--muted); font-size:15px; margin-top:8px; font-variant-numeric:tabular-nums}
+  .stat{font-size:22px; font-weight:500; font-variant-numeric:tabular-nums}
+  .delta{color:var(--accent); font-weight:700}
+
+  /* ---- полоса диапазонов ---- */
+  .ladder{margin-top:6px}
+  .ladder svg{width:100%; height:auto; display:block}
+  .legend{display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:12px; font-size:13px; color:var(--muted)}
+  .legend i{display:inline-block; width:11px; height:11px; border-radius:2px; margin-right:6px; vertical-align:-1px}
+
+  /* ---- таблицы ---- */
+  .scroller{overflow-x:auto; -webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; font-size:15px}
+  th,td{padding:9px 12px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-weight:500; color:var(--muted); font-size:13px; border-bottom-width:1px}
+  tbody tr.now{background:var(--accent-soft)}
+  tbody tr.now td{font-weight:700}
+  td.mark{color:var(--accent); font-weight:500}
+
+  /* ---- сворачиваемые блоки ---- */
+  details{border:1px solid var(--line); border-radius:10px; background:var(--panel); box-shadow:var(--shadow); margin-bottom:18px}
+  summary{padding:16px 20px; cursor:pointer; font-weight:500; list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+"; float:right; color:var(--muted); font-size:20px; line-height:1}
+  details[open] summary::after{content:"–"}
+  .statwrap{padding:0 20px 18px}
+
+  /* ---- параметры: один столбик ---- */
+  .params{padding:0 20px 20px; display:flex; flex-direction:column; gap:12px}
+  .field{display:flex; flex-direction:column; gap:5px; max-width:420px}
+  .field span{font-size:13px; color:var(--muted)}
+  .field input{
+    font-family:inherit; font-size:16px; padding:8px 10px; border-radius:7px;
+    border:1px solid var(--line); background:var(--panel-2); color:var(--ink);
+    font-variant-numeric:tabular-nums; width:100%;
+  }
+  .field input:disabled{opacity:.55; cursor:not-allowed}
+  .field input:focus-visible, button:focus-visible, summary:focus-visible, input[type=range]:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  .group-title{font-weight:500; color:var(--ink); border-top:1px solid var(--line); padding-top:14px; margin-top:2px}
+  .group-title:first-child{border-top:none; padding-top:0; margin-top:0}
+  .verdict{margin-top:18px; padding:14px 16px; border-left:3px solid var(--accent); background:var(--panel-2); border-radius:0 8px 8px 0}
+  .note{color:var(--muted); font-size:14px; margin-top:14px}
+  @media (prefers-reduced-motion: no-preference){
+    rect.seg{transition:width .25s ease, x .25s ease}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Сколько альтов держать</h1>
+  <p class="lede">Штраф за недельный налёт общий на аккаунт в рамках сервера, но ходка с премиум-множителем весит в счётчике как одна. Двигай ползунок и смотри, где прирост перестаёт окупать возню.</p>
+
+  <div class="card">
+    <div class="premrow">
+      <label class="toggle"><input type="checkbox" id="prem" checked><span>Премиум подписка</span></label>
+      <span class="pill" id="premstate"></span>
+    </div>
+    <div class="dial">
+      <label for="alts">Альтов</label>
+      <div class="stepper">
+        <button class="step" id="minus" aria-label="Убрать альта">−</button>
+        <div class="altnum" id="altnum">1</div>
+        <button class="step" id="plus" aria-label="Добавить альта">+</button>
+      </div>
+      <input type="range" id="alts" min="0" max="8" step="1" value="1">
+    </div>
+
+    <div class="hero">
+      <div>
+        <div class="cap">Кины за неделю</div>
+        <div class="big" id="gold">0</div>
+        <div class="sub" id="month"></div>
+      </div>
+      <div>
+        <div class="cap">Ходок (с множителем)</div>
+        <div class="stat" id="runs">0</div>
+      </div>
+      <div>
+        <div class="cap">Средняя ставка</div>
+        <div class="stat" id="rate">100%</div>
+      </div>
+      <div>
+        <div class="cap">Дал последний альт</div>
+        <div class="stat delta" id="marg">—</div>
+      </div>
+    </div>
+
+    <div class="verdict" id="verdict"></div>
+  </div>
+
+  <div class="card ladder">
+    <div class="cap" style="margin-bottom:10px">Куда попадают ходки недели</div>
+    <div id="ladder"></div>
+    <div class="legend">
+      <span><i style="background:var(--r100)"></i>100%</span>
+      <span><i style="background:var(--r80)"></i>80%</span>
+      <span><i style="background:var(--r60)"></i>60%</span>
+      <span><i style="background:var(--r40)"></i>40%</span>
+      <span><i style="background:var(--r20)"></i>20%</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr>
+            <th>Альтов</th><th>Ходок</th><th>Ставка</th><th>Кины за неделю</th><th>Прирост</th><th>За ходку</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="note" id="tnote"></p>
+  </div>
+
+  <details>
+    <summary>Энергия и ходки на персонажа</summary>
+    <div class="statwrap">
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>&nbsp;</th><th>Основа</th><th>1 альт</th><th id="allcol">Всего</th></tr>
+          </thead>
+          <tbody id="statsbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Параметры расчёта</summary>
+    <div class="params">
+      <div class="group-title">Энергия</div>
+      <label class="field"><span>Восстановление в час, с премиумом</span><input type="number" id="regen" value="5" min="0" step="0.5"></label>
+      <label class="field"><span>Восстановление в час, без премиума</span><input type="number" id="regenoff" value="2.5" min="0" step="0.5"></label>
+      <label class="field"><span>Часов в неделе</span><input type="number" id="hours" value="168" min="1" step="1"></label>
+      <label class="field"><span>1 одиль = энергии</span><input type="number" id="odyle" value="40" min="1" step="1"></label>
+      <label class="field"><span>Энергии на ходку</span><input type="number" id="cost" value="40" min="1" step="1"></label>
+
+      <div class="group-title">Потолок накопления энергии</div>
+      <label class="field"><span>С премиумом</span><input type="number" id="capon" value="840" min="0" step="10"></label>
+      <label class="field"><span>Без премиума</span><input type="number" id="capoff" value="560" min="0" step="10"></label>
+
+      <div class="group-title">Одиль сверх регена</div>
+      <label class="field"><span>Крафт, основа</span><input type="number" id="cmain" value="20" min="0" step="1"></label>
+      <label class="field"><span>Покупка, основа</span><input type="number" id="bmain" value="20" min="0" step="1"></label>
+      <label class="field"><span>Крафт, альт</span><input type="number" id="calt" value="4" min="0" step="1"></label>
+      <label class="field"><span>Покупка, альт</span><input type="number" id="balt" value="4" min="0" step="1"></label>
+
+      <div class="group-title">Награда и штраф</div>
+      <label class="field"><span>Кины за ходку при 100%</span><input type="number" id="grun" value="400000" min="0" step="1000"></label>
+      <label class="field"><span>Цена покупки 1 одиля в кине</span><input type="number" id="price" value="100000" min="0" step="1000"></label>
+      <label class="field"><span>Планка прироста за альта</span><input type="number" id="bar" value="5000000" min="0" step="250000"></label>
+      <label class="field"><span>Недель в месяце</span><input type="number" id="weeks" value="4.35" min="1" step="0.05"></label>
+
+      <div class="group-title">Пороги (по таблице в игре)</div>
+      <label class="field"><span>Конец 100%</span><input type="number" id="t0" value="83" min="1" step="1"></label>
+      <label class="field"><span>Конец 80%</span><input type="number" id="t1" value="104" min="1" step="1"></label>
+      <label class="field"><span>Конец 60%</span><input type="number" id="t2" value="125" min="1" step="1"></label>
+      <label class="field"><span>Конец 40%</span><input type="number" id="t3" value="146" min="1" step="1"></label>
+    </div>
+  </details>
+
+  <p class="note">Ходки основы и всех альтов на одном сервере складываются в один счётчик. Ходка с множителем тратит энергию и платит награду в кратном размере, но счётчик увеличивает на единицу — поэтому расчёт сначала выжимает всю энергию в такие ходки, а остатки догоняет обычными в конце недели.</p>
+</div>
+
+<script>
+(function(){
+  var RATES = [1, .8, .6, .4, .2];
+  var COLORS = ['--r100','--r80','--r60','--r40','--r20'];
+  var nf = new Intl.NumberFormat('ru-RU');
+  var MAXALT = 8;
+  var MULT = 2;   // премиум-ходка: ×2 энергии, ×2 награды, +1 к счётчику
+
+  function v(id){ var x = parseFloat(document.getElementById(id).value); return isFinite(x) ? x : 0; }
+
+  function read(){
+    var t = [v('t0'), v('t1'), v('t2'), v('t3')];
+    for (var i=1;i<4;i++) if (t[i] < t[i-1]) t[i] = t[i-1];
+    var perRun = Math.max(1, v('cost'));
+    var prem = document.getElementById('prem').checked;
+    var m = prem ? MULT : 1;
+    var reg = (prem ? v('regen') : v('regenoff')) * v('hours');
+    var cap = prem ? v('capon') : v('capoff');
+    if (cap > 0) reg = Math.min(reg, cap);
+    var bm = prem ? v('bmain') : 0, ba = prem ? v('balt') : 0;
+    function build(craftPcs, buyPcs){
+      var craft = craftPcs*v('odyle'), buy = buyPcs*v('odyle');
+      var E = reg + craft + buy;
+      var big = Math.floor(E/(perRun*m));
+      var small = Math.floor((E - big*perRun*m)/perRun);
+      return { regen: reg, craft: craft, buy: buy, energy: E,
+               big: big, small: small, rest: E - big*perRun*m - small*perRun };
+    }
+    return {
+      th: t, m: m, perRun: perRun, prem: prem,
+      main: build(v('cmain'), bm), alt: build(v('calt'), ba),
+      gRun: v('grun'),
+      price: prem ? v('price') : 0,
+      buyMain: bm,
+      buyAlt: ba,
+      weeks: Math.max(1, v('weeks')),
+      bar: v('bar')
+    };
+  }
+
+  // Сколько «ходок по 100%» стоят n засчитанных ходок
+  function weighted(n, th){
+    var b = [0, th[0], th[1], th[2], th[3], Infinity], s = 0;
+    for (var i=0;i<5;i++){
+      var seg = Math.min(n, b[i+1]) - b[i];
+      if (seg > 0) s += seg * RATES[i];
+    }
+    return s;
+  }
+  function rateAt(n, th){
+    for (var i=0;i<4;i++) if (n <= th[i]) return i;
+    return 4;
+  }
+
+  function row(a, s){
+    // ходки с множителем идут первыми — они дороже, и им достаются лучшие ставки
+    var big = s.main.big + a*s.alt.big;
+    var small = s.main.small + a*s.alt.small;
+    var n = big + small;
+    var wb = weighted(big, s.th), wn = weighted(n, s.th);
+    var gross = s.gRun * ((s.m-1)*wb + wn);
+    var cap = s.gRun * (big*s.m + small);
+    var spend = s.price * (s.buyMain + a*s.buyAlt);
+    return {
+      alts:a, big:big, small:small, counts:n, runs:n,
+      net: gross - spend, cap: cap,
+      rate: cap ? gross/cap : 1
+    };
+  }
+
+  function draw(s, a){
+    var W = 1000, H = 132, L = 4, R = 4, y = 34, h = 40;
+    var cur = row(a, s);
+    var maxX = Math.max(cur.counts, s.th[3] + 24);
+    var x = function(n){ return L + (W-L-R) * n / maxX; };
+    var b = [0, s.th[0], s.th[1], s.th[2], s.th[3], maxX];
+    var o = ['<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Распределение ходок по диапазонам штрафа">'];
+
+    // фон диапазонов + заполненная часть
+    for (var i=0;i<5;i++){
+      var x0 = x(b[i]), x1 = x(Math.min(b[i+1], maxX));
+      if (x1 <= x0) continue;
+      o.push('<rect x="'+x0.toFixed(1)+'" y="'+y+'" width="'+(x1-x0).toFixed(1)+'" height="'+h+'" fill="var('+COLORS[i]+')" opacity=".17"/>');
+      var f1 = Math.min(x1, x(cur.counts));
+      if (f1 > x0) o.push('<rect class="seg" x="'+x0.toFixed(1)+'" y="'+y+'" width="'+(f1-x0).toFixed(1)+'" height="'+h+'" fill="var('+COLORS[i]+')"/>');
+    }
+
+    // границы блоков
+    var acc = 0, chars;
+    if (s.m > 1){
+      chars = [{n:'×'+s.m+' ходки', c:cur.big}, {n:'остатки ×1', c:cur.small}];
+    } else {
+      chars = [{n:'осн', c:s.main.big + s.main.small}];
+      for (var k=1;k<=a;k++) chars.push({n:'а'+k, c:s.alt.big + s.alt.small});
+    }
+    for (var j=0;j<chars.length;j++){
+      var from = acc; acc += chars[j].c;
+      var xa = x(from), xb = x(acc);
+      if (j > 0) o.push('<line x1="'+xa.toFixed(1)+'" y1="'+(y-4)+'" x2="'+xa.toFixed(1)+'" y2="'+(y+h+4)+'" stroke="var(--panel)" stroke-width="2.5"/>');
+      if (xb - xa > 34) o.push('<text x="'+((xa+xb)/2).toFixed(1)+'" y="'+(y-10)+'" fill="var(--muted)" font-size="15" font-family="Space Grotesk, sans-serif" text-anchor="middle">'+chars[j].n+'</text>');
+    }
+
+    // пороги
+    for (var t=0;t<4;t++){
+      var xt = x(s.th[t]);
+      if (xt > W-R-2) continue;
+      o.push('<line x1="'+xt.toFixed(1)+'" y1="'+(y+h)+'" x2="'+xt.toFixed(1)+'" y2="'+(y+h+9)+'" stroke="var(--line)" stroke-width="2"/>');
+      o.push('<text x="'+xt.toFixed(1)+'" y="'+(y+h+28)+'" fill="var(--muted)" font-size="15" font-family="Space Grotesk, sans-serif" text-anchor="middle">'+s.th[t]+'</text>');
+    }
+    // итог
+    var xc = x(cur.counts);
+    o.push('<line x1="'+xc.toFixed(1)+'" y1="'+(y-18)+'" x2="'+xc.toFixed(1)+'" y2="'+(y+h)+'" stroke="var(--ink)" stroke-width="2"/>');
+    var anchor = xc > W*0.88 ? 'end' : 'start';
+    var dx = anchor === 'end' ? -8 : 8;
+    o.push('<text x="'+(xc+dx).toFixed(1)+'" y="'+(y-22)+'" fill="var(--ink)" font-size="17" font-weight="700" font-family="Space Grotesk, sans-serif" text-anchor="'+anchor+'">'+cur.counts+'</text>');
+    o.push('</svg>');
+    document.getElementById('ladder').innerHTML = o.join('');
+  }
+
+  function renderStats(s, a){
+    var sum = {}, keys = ['regen','craft','buy','energy','big','small','rest'];
+    for (var i=0;i<keys.length;i++) sum[keys[i]] = s.main[keys[i]] + a*s.alt[keys[i]];
+
+    var rows = [
+      ['энергия с регена', function(o){ return nf.format(o.regen); }, false],
+      ['энергия с крафта', function(o){ return nf.format(o.craft); }, false],
+      ['энергия с покупки', function(o){ return nf.format(o.buy); }, false],
+      ['энергии всего', function(o){ return nf.format(o.energy); }, true],
+      ['ходок ×' + s.m, function(o){ return nf.format(o.big); }, false],
+      ['обычных ходок на остаток', function(o){ return nf.format(o.small); }, false],
+      ['ходок, чтобы слить всю энергию', function(o){ return nf.format(o.big + o.small); }, true],
+      ['энергии останется лишней', function(o){ return nf.format(o.rest); }, false],
+      ['золото без штрафа', function(o){ return nf.format(Math.round((o.big*s.m + o.small)*s.gRun)); }, false]
+    ];
+
+    var html = '';
+    for (var r=0;r<rows.length;r++){
+      var w = rows[r][2] ? ' style="font-weight:700"' : '';
+      html += '<tr'+w+'><td>' + rows[r][0] + '</td>'
+            + '<td>' + rows[r][1](s.main) + '</td>'
+            + '<td>' + rows[r][1](s.alt) + '</td>'
+            + '<td>' + rows[r][1](sum) + '</td></tr>';
+    }
+    document.getElementById('statsbody').innerHTML = html;
+    document.getElementById('allcol').textContent = a ? 'Осн + ' + a + ' альт' : 'Всего';
+  }
+
+  function render(){
+    var s = read();
+    var a = parseInt(document.getElementById('alts').value, 10);
+    var cur = row(a, s), prev = a > 0 ? row(a-1, s) : null;
+
+    document.getElementById('altnum').textContent = a;
+    var pill = document.getElementById('premstate');
+    var rph = function(x){ return String(Math.round(x*100)/100).replace('.', ','); };
+    if (s.prem){
+      pill.className = 'pill';
+      pill.textContent = '×' + s.m + ' награда · реген ' + rph(v('regen')) + '/час · покупка энергии доступна';
+    } else {
+      pill.className = 'pill off';
+      pill.textContent = 'только ×1 · реген ' + rph(v('regenoff')) + '/час · потолок '
+        + nf.format(v('capoff')) + ' · покупка недоступна';
+    }
+    document.getElementById('minus').disabled = a === 0;
+    document.getElementById('plus').disabled = a === MAXALT;
+    document.getElementById('gold').textContent = nf.format(Math.round(cur.net));
+    document.getElementById('month').textContent = '≈ ' + nf.format(Math.round(cur.net*s.weeks)) + ' в месяц';
+    document.getElementById('runs').textContent = cur.counts + (s.m > 1 ? ' (' + cur.big + ' ×' + s.m + ')' : '');
+    document.getElementById('rate').textContent = Math.round(cur.rate*100) + '%';
+    document.getElementById('marg').textContent = prev ? '+' + nf.format(Math.round(cur.net - prev.net)) : '—';
+
+    // таблица
+    var rows = [], best = 0;
+    for (var i=0;i<=MAXALT;i++) rows.push(row(i, s));
+    for (var i=1;i<=MAXALT;i++){ if (rows[i].net - rows[i-1].net >= s.bar) best = i; else break; }
+
+    var html = '';
+    for (var i=0;i<=MAXALT;i++){
+      var d = i ? rows[i].net - rows[i-1].net : null;
+      html += '<tr class="'+(i===a?'now':'')+'">'
+        + '<td>' + i + (i===best ? ' <span class="mark">← оптимум</span>' : '') + '</td>'
+        + '<td>' + rows[i].runs + '</td>'
+        + '<td>' + Math.round(rows[i].rate*100) + '%</td>'
+        + '<td>' + nf.format(Math.round(rows[i].net)) + '</td>'
+        + '<td>' + (d === null ? '—' : '+' + nf.format(Math.round(d))) + '</td>'
+        + '<td>' + nf.format(Math.round(rows[i].net / Math.max(1, rows[i].runs))) + '</td>'
+        + '</tr>';
+    }
+    document.getElementById('tbody').innerHTML = html;
+    document.getElementById('tnote').textContent = 'Оптимум — последний альт, который приносит не меньше ' + nf.format(s.bar) + ' кины. Планка меняется в параметрах.';
+
+    // вердикт
+    var idx = rateAt(cur.counts, s.th);
+    var toNext = s.th[Math.min(idx,3)] - cur.counts;
+    var msg;
+    if (a < best) {
+      msg = 'Ещё ' + (best - a) + ' ' + (best-a === 1 ? 'альт добавит' : 'альта добавят') + ' ощутимо: до оптимума ' + nf.format(Math.round(rows[best].net - cur.net)) + ' кины в неделю.';
+    } else if (a > best) {
+      msg = 'Лишние альты уже почти не платят. Урезав до ' + best + ', ты теряешь всего ' + nf.format(Math.round(cur.net - rows[best].net)) + ' кины в неделю.';
+    } else {
+      msg = 'Это и есть оптимум при твоей планке: следующий альт принесёт всего ' + nf.format(Math.round(rows[Math.min(a+1,MAXALT)].net - cur.net)) + ' кины.';
+    }
+    if (idx < 4 && toNext >= 0) msg += ' До следующего порога штрафа ' + toNext + ' ходок.';
+    else if (idx === 4) msg += ' Все ходки сверх ' + s.th[3] + ' идут по 20%.';
+    document.getElementById('verdict').textContent = msg;
+
+    draw(s, a);
+    renderStats(s, a);
+  }
+
+  document.getElementById('alts').addEventListener('input', render);
+  document.getElementById('minus').addEventListener('click', function(){
+    var r = document.getElementById('alts'); r.value = Math.max(0, +r.value - 1); render();
+  });
+  document.getElementById('plus').addEventListener('click', function(){
+    var r = document.getElementById('alts'); r.value = Math.min(MAXALT, +r.value + 1); render();
+  });
+
+  // Поля, которые без премиума не работают: обнуляем и запираем, значения запоминаем
+  var OFFVALUE = { price: 0, bmain: 0, balt: 0 };
+  var savedPrem = null;
+
+  function applyPrem(){
+    var on = document.getElementById('prem').checked, k;
+    if (!on){
+      if (!savedPrem){
+        savedPrem = {};
+        for (k in OFFVALUE) savedPrem[k] = document.getElementById(k).value;
+      }
+      for (k in OFFVALUE){
+        var e = document.getElementById(k);
+        e.value = OFFVALUE[k];
+        e.disabled = true;
+      }
+    } else {
+      for (k in OFFVALUE){
+        var el = document.getElementById(k);
+        if (savedPrem) el.value = savedPrem[k];
+        el.disabled = false;
+      }
+      savedPrem = null;
+    }
+    document.getElementById('capon').disabled = !on;
+    document.getElementById('regen').disabled = !on;
+    document.getElementById('capoff').disabled = on;
+    document.getElementById('regenoff').disabled = on;
+  }
+
+  document.getElementById('prem').addEventListener('change', function(){ applyPrem(); render(); });
+  var ids = ['regen','hours','odyle','cost','cmain','bmain','calt','balt','grun','price','bar','weeks','regenoff','capon','capoff','t0','t1','t2','t3'];
+  ids.forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+
+  applyPrem();
+  render();
+})();
+</script>
+</body>
+</html>
