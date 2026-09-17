@@ -68,6 +68,7 @@
   .pill{font-size:13px; color:var(--accent); background:var(--accent-soft);
         border:1px solid var(--accent); border-radius:999px; padding:4px 13px}
   .pill.off{color:var(--r20); border-color:var(--r20); background:transparent}
+  .pill.dim{color:var(--muted); border-color:var(--line); background:transparent}
 
   /* ---- альты ---- */
   .dial{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
@@ -93,6 +94,7 @@
   .sub{color:var(--muted); font-size:15px; margin-top:8px; font-variant-numeric:tabular-nums}
   .stat{font-size:22px; font-weight:500; font-variant-numeric:tabular-nums}
   .delta{color:var(--accent); font-weight:700}
+  .spend{color:var(--r20)}
 
   /* ---- полоса диапазонов ---- */
   .ladder{margin-top:6px}
@@ -109,6 +111,8 @@
   tbody tr.now{background:var(--accent-soft)}
   tbody tr.now td{font-weight:700}
   td.mark{color:var(--accent); font-weight:500}
+  table.metrics td.txt{white-space:normal; min-width:11ch; font-size:14px; color:var(--muted)}
+  table.metrics tr.total td{font-weight:700}
 
   /* ---- сворачиваемые блоки ---- */
   details{border:1px solid var(--line); border-radius:10px; background:var(--panel); box-shadow:var(--shadow); margin-bottom:18px}
@@ -151,6 +155,10 @@
       <label class="toggle"><input type="checkbox" id="prem" checked><span>Премиум подписка</span></label>
       <span class="pill" id="premstate"></span>
     </div>
+    <div class="premrow">
+      <label class="toggle"><input type="checkbox" id="trans"><span>Transcendence основа</span></label>
+      <span class="pill" id="transstate"></span>
+    </div>
     <div class="dial">
       <label for="alts">Альтов</label>
       <div class="stepper">
@@ -158,7 +166,7 @@
         <div class="altnum" id="altnum">1</div>
         <button class="step" id="plus" aria-label="Добавить альта">+</button>
       </div>
-      <input type="range" id="alts" min="0" max="8" step="1" value="1">
+      <input type="range" id="alts" min="0" max="7" step="1" value="1">
     </div>
 
     <div class="hero">
@@ -168,20 +176,25 @@
         <div class="sub" id="month"></div>
       </div>
       <div>
-        <div class="cap">Ходок (с множителем)</div>
-        <div class="stat" id="runs">0</div>
-      </div>
-      <div>
-        <div class="cap">Средняя ставка</div>
-        <div class="stat" id="rate">100%</div>
-      </div>
-      <div>
         <div class="cap">Дал последний альт</div>
         <div class="stat delta" id="marg">—</div>
       </div>
     </div>
 
     <div class="verdict" id="verdict"></div>
+  </div>
+
+  <div class="card">
+    <div class="cap" style="margin-bottom:10px">Ходки за неделю</div>
+    <div class="scroller">
+      <table class="metrics">
+        <thead>
+          <tr><th>&nbsp;</th><th>Основа</th><th id="altsh">Альты</th><th>Всего</th></tr>
+        </thead>
+        <tbody id="metrics"></tbody>
+      </table>
+    </div>
+    <p class="note" id="mnote"></p>
   </div>
 
   <div class="card ladder">
@@ -201,7 +214,7 @@
       <table>
         <thead>
           <tr>
-            <th>Альтов</th><th>Ходок</th><th>Ставка</th><th>Кины за неделю</th><th>Прирост</th><th>За ходку</th>
+            <th>Альтов</th><th>Ходок</th><th>Ставка</th><th>Доход</th><th>Покупка</th><th>Кины за неделю</th><th>Прирост</th><th>За ходку</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -216,7 +229,7 @@
       <div class="scroller">
         <table>
           <thead>
-            <tr><th>&nbsp;</th><th>Основа</th><th>1 альт</th><th id="allcol">Всего</th></tr>
+            <tr><th>&nbsp;</th><th id="maincol">Основа</th><th>1 альт</th><th id="allcol">Всего</th></tr>
           </thead>
           <tbody id="statsbody"></tbody>
         </table>
@@ -250,6 +263,11 @@
       <label class="field"><span>Планка прироста за альта</span><input type="number" id="bar" value="5000000" min="0" step="250000"></label>
       <label class="field"><span>Недель в месяце</span><input type="number" id="weeks" value="4.35" min="1" step="0.05"></label>
 
+      <div class="group-title">Transcendence (основа при включённой галочке)</div>
+      <label class="field"><span>Ходок Transcendence без штрафа за неделю</span><input type="number" id="tlimit" value="55" min="0" step="1"></label>
+      <label class="field"><span>Кины за ходку Transcendence при 100%</span><input type="number" id="tgrun" value="400000" min="0" step="1000"></label>
+      <label class="field"><span>Ставка Transcendence сверх лимита, %</span><input type="number" id="tover" value="0" min="0" max="100" step="5"></label>
+
       <div class="group-title">Пороги (по таблице в игре)</div>
       <label class="field"><span>Конец 100%</span><input type="number" id="t0" value="83" min="1" step="1"></label>
       <label class="field"><span>Конец 80%</span><input type="number" id="t1" value="104" min="1" step="1"></label>
@@ -258,7 +276,7 @@
     </div>
   </details>
 
-  <p class="note">Ходки основы и всех альтов на одном сервере складываются в один счётчик. Ходка с множителем тратит энергию и платит награду в кратном размере, но счётчик увеличивает на единицу — поэтому расчёт сначала выжимает всю энергию в такие ходки, а остатки догоняет обычными в конце недели.</p>
+  <p class="note">Ходки основы и всех альтов на одном сервере складываются в один счётчик. Ходка с множителем тратит энергию и платит награду в кратном размере, но счётчик увеличивает на единицу — поэтому расчёт сначала выжимает всю энергию в такие ходки, а остатки догоняет обычными в конце недели. С галочкой «Transcendence основа» основа выпадает из общего счётчика: вся её энергия уходит в Transcendence со своим лимитом ходок без штрафа, а альты начинают недельный счётчик с нуля.</p>
 </div>
 
 <script>
@@ -266,7 +284,7 @@
   var RATES = [1, .8, .6, .4, .2];
   var COLORS = ['--r100','--r80','--r60','--r40','--r20'];
   var nf = new Intl.NumberFormat('ru-RU');
-  var MAXALT = 8;
+  var MAXALT = 7;   // 7 альтов + основа = 8 персонажей на аккаунте
   var MULT = 2;   // премиум-ходка: ×2 энергии, ×2 награды, +1 к счётчику
 
   function v(id){ var x = parseFloat(document.getElementById(id).value); return isFinite(x) ? x : 0; }
@@ -276,6 +294,7 @@
     for (var i=1;i<4;i++) if (t[i] < t[i-1]) t[i] = t[i-1];
     var perRun = Math.max(1, v('cost'));
     var prem = document.getElementById('prem').checked;
+    var trans = document.getElementById('trans').checked;
     var m = prem ? MULT : 1;
     var reg = (prem ? v('regen') : v('regenoff')) * v('hours');
     var cap = prem ? v('capon') : v('capoff');
@@ -290,7 +309,9 @@
                big: big, small: small, rest: E - big*perRun*m - small*perRun };
     }
     return {
-      th: t, m: m, perRun: perRun, prem: prem,
+      th: t, m: m, perRun: perRun, prem: prem, trans: trans,
+      tLimit: Math.max(0, v('tlimit')), tGRun: v('tgrun'),
+      tOver: Math.min(100, Math.max(0, v('tover'))) / 100,
       main: build(v('cmain'), bm), alt: build(v('calt'), ba),
       gRun: v('grun'),
       price: prem ? v('price') : 0,
@@ -315,19 +336,32 @@
     return 4;
   }
 
+  // Основа в Transcendence: свой счётчик, до лимита 100%, сверх — ставка из параметров
+  function transIncome(s){
+    if (!s.trans) return { runs:0, big:0, over:0, gross:0 };
+    var big = s.main.big, n = big + s.main.small;
+    var w = function(k){ return Math.min(k, s.tLimit) + Math.max(0, k - s.tLimit)*s.tOver; };
+    return { runs:n, big:big, over:Math.max(0, n - s.tLimit),
+             gross: s.tGRun * ((s.m-1)*w(big) + w(n)) };
+  }
+
   function row(a, s){
     // ходки с множителем идут первыми — они дороже, и им достаются лучшие ставки
-    var big = s.main.big + a*s.alt.big;
-    var small = s.main.small + a*s.alt.small;
+    var mainIn = s.trans ? 0 : 1;   // с галочкой основа не участвует в общем счётчике
+    var big = mainIn*s.main.big + a*s.alt.big;
+    var small = mainIn*s.main.small + a*s.alt.small;
     var n = big + small;
     var wb = weighted(big, s.th), wn = weighted(n, s.th);
     var gross = s.gRun * ((s.m-1)*wb + wn);
     var cap = s.gRun * (big*s.m + small);
     var spend = s.price * (s.buyMain + a*s.buyAlt);
+    var tr = transIncome(s);
     return {
       alts:a, big:big, small:small, counts:n, runs:n,
-      net: gross - spend, cap: cap,
-      rate: cap ? gross/cap : 1
+      gross: gross + tr.gross, spend: spend,
+      net: gross + tr.gross - spend, cap: cap,
+      rate: cap ? gross/cap : 1,
+      trans: tr
     };
   }
 
@@ -353,7 +387,7 @@
     if (s.m > 1){
       chars = [{n:'×'+s.m+' ходки', c:cur.big}, {n:'остатки ×1', c:cur.small}];
     } else {
-      chars = [{n:'осн', c:s.main.big + s.main.small}];
+      chars = s.trans ? [] : [{n:'осн', c:s.main.big + s.main.small}];
       for (var k=1;k<=a;k++) chars.push({n:'а'+k, c:s.alt.big + s.alt.small});
     }
     for (var j=0;j<chars.length;j++){
@@ -380,6 +414,66 @@
     document.getElementById('ladder').innerHTML = o.join('');
   }
 
+  // Метрики недели: основа и альты отдельно
+  function renderMetrics(s, a, cur){
+    var m = s.m, tr = cur.trans, pct = function(x){ return Math.round(x*100) + '%'; };
+    var money = function(x){ return nf.format(Math.round(x)); };
+    var neg = function(x){ return x ? '−' + money(x) : '0'; };
+
+    var main = { big: s.main.big, small: s.main.small, spend: s.price * s.buyMain };
+    main.runs = main.big + main.small;
+    if (s.trans){
+      main.gross = tr.gross;
+      main.cap = s.tGRun * (main.big*m + main.small);
+      main.where = 'Transcendence · ' + tr.runs + ' из ' + s.tLimit + ' без штрафа'
+                 + (tr.over ? ', ' + tr.over + ' сверх лимита по ' + pct(s.tOver) : '');
+    } else {
+      // в общем счётчике ×2 ходки основы стоят первыми среди ×2, обычные — первыми среди обычных
+      var wb = weighted(main.big, s.th);
+      var ws = weighted(cur.big + main.small, s.th) - weighted(cur.big, s.th);
+      main.gross = s.gRun * (m*wb + ws);
+      main.cap = s.gRun * (main.big*m + main.small);
+      main.where = 'общий счётчик';
+    }
+    main.net = main.gross - main.spend;
+
+    var alts = { big: a*s.alt.big, small: a*s.alt.small, spend: s.price * a * s.buyAlt };
+    alts.runs = alts.big + alts.small;
+    alts.gross = cur.gross - main.gross;
+    alts.cap = s.gRun * (alts.big*m + alts.small);
+    alts.net = alts.gross - alts.spend;
+    alts.where = a ? 'общий счётчик' : '—';
+
+    var all = { big: main.big + alts.big, small: main.small + alts.small, runs: main.runs + alts.runs,
+                gross: cur.gross, cap: main.cap + alts.cap, spend: cur.spend, net: cur.net,
+                where: cur.counts + ' в общем счётчике, без штрафа до ' + s.th[0] };
+
+    var rows = [
+      ['Счётчик', function(o){ return o.where; }, 'txt', false],
+      ['Ходок', function(o){ return nf.format(o.runs); }, '', false],
+      m > 1 ? ['из них ×' + m, function(o){ return nf.format(o.big); }, '', false] : null,
+      m > 1 ? ['обычных', function(o){ return nf.format(o.small); }, '', false] : null,
+      ['Средняя ставка', function(o){ return o.cap ? pct(o.gross/o.cap) : '—'; }, '', false],
+      ['Доход', function(o){ return money(o.gross); }, '', false],
+      ['Покупка одилей', function(o){ return neg(o.spend); }, 'spend', false],
+      ['Кины чистыми', function(o){ return money(o.net); }, '', true]
+    ];
+    var html = '';
+    for (var i=0;i<rows.length;i++){
+      var r = rows[i]; if (!r) continue;
+      var cls = r[2] ? ' class="' + r[2] + '"' : '';
+      html += '<tr' + (r[3] ? ' class="total"' : '') + '><td>' + r[0] + '</td>'
+            + '<td' + cls + '>' + r[1](main) + '</td>'
+            + '<td' + cls + '>' + r[1](alts) + '</td>'
+            + '<td' + cls + '>' + r[1](all) + '</td></tr>';
+    }
+    document.getElementById('metrics').innerHTML = html;
+    document.getElementById('altsh').textContent = a ? 'Альты (' + a + ')' : 'Альты';
+    document.getElementById('mnote').textContent = s.trans
+      ? 'Основа не участвует в общем счётчике: её ходки идут в Transcendence со своим лимитом.'
+      : (m > 1 ? 'Ходки ×' + m + ' всех персонажей идут в счётчике первыми; внутри ступени ходки основы считаются раньше ходок альтов.' : 'Ходки основы считаются в счётчике раньше ходок альтов.');
+  }
+
   function renderStats(s, a){
     var sum = {}, keys = ['regen','craft','buy','energy','big','small','rest'];
     for (var i=0;i<keys.length;i++) sum[keys[i]] = s.main[keys[i]] + a*s.alt[keys[i]];
@@ -393,19 +487,33 @@
       ['обычных ходок на остаток', function(o){ return nf.format(o.small); }, false],
       ['ходок, чтобы слить всю энергию', function(o){ return nf.format(o.big + o.small); }, true],
       ['энергии останется лишней', function(o){ return nf.format(o.rest); }, false],
-      ['золото без штрафа', function(o){ return nf.format(Math.round((o.big*s.m + o.small)*s.gRun)); }, false]
+      ['расход на покупку одилей', function(o, who){
+        var val = who === 'main' ? s.price*s.buyMain
+                : who === 'alt'  ? s.price*s.buyAlt
+                : s.price*(s.buyMain + a*s.buyAlt);
+        return val ? '−' + nf.format(Math.round(val)) : '0';
+      }, false],
+      ['золото без штрафа', function(o, who){
+        var gMain = s.trans ? s.tGRun : s.gRun;
+        var gold = function(x, g){ return (x.big*s.m + x.small)*g; };
+        var val = who === 'main' ? gold(o, gMain)
+                : who === 'alt'  ? gold(o, s.gRun)
+                : gold(s.main, gMain) + a*gold(s.alt, s.gRun);
+        return nf.format(Math.round(val));
+      }, false]
     ];
 
     var html = '';
     for (var r=0;r<rows.length;r++){
       var w = rows[r][2] ? ' style="font-weight:700"' : '';
       html += '<tr'+w+'><td>' + rows[r][0] + '</td>'
-            + '<td>' + rows[r][1](s.main) + '</td>'
-            + '<td>' + rows[r][1](s.alt) + '</td>'
-            + '<td>' + rows[r][1](sum) + '</td></tr>';
+            + '<td>' + rows[r][1](s.main, 'main') + '</td>'
+            + '<td>' + rows[r][1](s.alt, 'alt') + '</td>'
+            + '<td>' + rows[r][1](sum, 'sum') + '</td></tr>';
     }
     document.getElementById('statsbody').innerHTML = html;
     document.getElementById('allcol').textContent = a ? 'Осн + ' + a + ' альт' : 'Всего';
+    document.getElementById('maincol').textContent = s.trans ? 'Основа → Transcendence' : 'Основа';
   }
 
   function render(){
@@ -424,12 +532,19 @@
       pill.textContent = 'только ×1 · реген ' + rph(v('regenoff')) + '/час · потолок '
         + nf.format(v('capoff')) + ' · покупка недоступна';
     }
+    var tpill = document.getElementById('transstate'), tr = cur.trans;
+    if (s.trans){
+      tpill.className = tr.over > 0 ? 'pill off' : 'pill';
+      tpill.textContent = 'основа вне общего счётчика · ' + tr.runs + ' из ' + s.tLimit + ' ходок в Transcendence'
+        + (tr.over > 0 ? ' · ' + tr.over + ' сверх лимита по ' + Math.round(s.tOver*100) + '%' : '');
+    } else {
+      tpill.className = 'pill dim';
+      tpill.textContent = 'основа ходит обычные данжи вместе с альтами';
+    }
     document.getElementById('minus').disabled = a === 0;
     document.getElementById('plus').disabled = a === MAXALT;
     document.getElementById('gold').textContent = nf.format(Math.round(cur.net));
     document.getElementById('month').textContent = '≈ ' + nf.format(Math.round(cur.net*s.weeks)) + ' в месяц';
-    document.getElementById('runs').textContent = cur.counts + (s.m > 1 ? ' (' + cur.big + ' ×' + s.m + ')' : '');
-    document.getElementById('rate').textContent = Math.round(cur.rate*100) + '%';
     document.getElementById('marg').textContent = prev ? '+' + nf.format(Math.round(cur.net - prev.net)) : '—';
 
     // таблица
@@ -444,13 +559,15 @@
         + '<td>' + i + (i===best ? ' <span class="mark">← оптимум</span>' : '') + '</td>'
         + '<td>' + rows[i].runs + '</td>'
         + '<td>' + Math.round(rows[i].rate*100) + '%</td>'
+        + '<td>' + nf.format(Math.round(rows[i].gross)) + '</td>'
+        + '<td class="spend">' + (rows[i].spend ? '−' + nf.format(Math.round(rows[i].spend)) : '0') + '</td>'
         + '<td>' + nf.format(Math.round(rows[i].net)) + '</td>'
         + '<td>' + (d === null ? '—' : '+' + nf.format(Math.round(d))) + '</td>'
-        + '<td>' + nf.format(Math.round(rows[i].net / Math.max(1, rows[i].runs))) + '</td>'
+        + '<td>' + nf.format(Math.round(rows[i].net / Math.max(1, rows[i].runs + rows[i].trans.runs))) + '</td>'
         + '</tr>';
     }
     document.getElementById('tbody').innerHTML = html;
-    document.getElementById('tnote').textContent = 'Оптимум — последний альт, который приносит не меньше ' + nf.format(s.bar) + ' кины. Планка меняется в параметрах.';
+    document.getElementById('tnote').textContent = 'Оптимум — последний альт, который приносит не меньше ' + nf.format(s.bar) + ' кины. Планка меняется в параметрах.' + (s.trans ? ' «Ходок» и «Ставка» — только общий счётчик альтов; «За ходку» делит на все ходки, включая Transcendence основы.' : '');
 
     // вердикт
     var idx = rateAt(cur.counts, s.th);
@@ -461,12 +578,21 @@
     } else if (a > best) {
       msg = 'Лишние альты уже почти не платят. Урезав до ' + best + ', ты теряешь всего ' + nf.format(Math.round(cur.net - rows[best].net)) + ' кины в неделю.';
     } else {
-      msg = 'Это и есть оптимум при твоей планке: следующий альт принесёт всего ' + nf.format(Math.round(rows[Math.min(a+1,MAXALT)].net - cur.net)) + ' кины.';
+      msg = a === MAXALT
+        ? 'Это оптимум и одновременно потолок аккаунта: ' + MAXALT + ' альтов + основа, больше персонажей не завести.'
+        : 'Это и есть оптимум при твоей планке: следующий альт принесёт всего ' + nf.format(Math.round(rows[a+1].net - cur.net)) + ' кины.';
     }
     if (idx < 4 && toNext >= 0) msg += ' До следующего порога штрафа ' + toNext + ' ходок.';
     else if (idx === 4) msg += ' Все ходки сверх ' + s.th[3] + ' идут по 20%.';
+    if (s.trans){
+      msg += ' Основа сливает ' + tr.runs + ' ходок в Transcendence'
+        + (tr.over > 0
+            ? ', из них ' + tr.over + ' сверх лимита ' + s.tLimit + ' по ' + Math.round(s.tOver*100) + '%.'
+            : ', до лимита ' + s.tLimit + ' ещё ' + (s.tLimit - tr.runs) + '.');
+    }
     document.getElementById('verdict').textContent = msg;
 
+    renderMetrics(s, a, cur);
     draw(s, a);
     renderStats(s, a);
   }
@@ -510,7 +636,8 @@
   }
 
   document.getElementById('prem').addEventListener('change', function(){ applyPrem(); render(); });
-  var ids = ['regen','hours','odyle','cost','cmain','bmain','calt','balt','grun','price','bar','weeks','regenoff','capon','capoff','t0','t1','t2','t3'];
+  document.getElementById('trans').addEventListener('change', render);
+  var ids = ['regen','hours','odyle','cost','cmain','bmain','calt','balt','grun','price','bar','weeks','regenoff','capon','capoff','t0','t1','t2','t3','tlimit','tgrun','tover'];
   ids.forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
 
   applyPrem();
